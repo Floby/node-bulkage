@@ -1,3 +1,5 @@
+import Deferred from './deferred'
+
 type DebulkedResult<T> = Promise<T>
 type BulkedResult<T> = Promise<T[]>
   type CallArguments<T> = T[]
@@ -8,18 +10,18 @@ interface PendingCall<A, R> {
 }
 
 type Bulk<A> = CallArguments<A>[]
-interface BulkResolver<A, R> {
+export interface BulkResolver<A, R> {
   (bulk: Bulk<A>): BulkedResult<R>
 }
 
-interface Bulkage<A, R> {
+export interface Bulkage<A, R> {
   (...args: CallArguments<A>): DebulkedResult<R>
 }
 
 
-export function BulkPromise<A, R> (callable: BulkResolver<A, R>): Bulkage<A, R> {
+function MakeBulkage<A, R> (callable: BulkResolver<A, R>): Bulkage<A, R> {
   if (!callable) {
-    throw Error('BulkPromise MUST be called with a callbale argument')
+    throw Error('Bulkage MUST be constructed with a callbale argument')
   }
   let scheduled = false
   let pendingCalls: PendingCall<A, R>[] = []
@@ -57,42 +59,4 @@ export function BulkPromise<A, R> (callable: BulkResolver<A, R>): Bulkage<A, R> 
   }
 }
 
-class Deferred<T> {
-  readonly promise: Promise<T>
-  private _resolve: (value: T) => void = noop
-  private _reject: (error: Error) => void = noop
-  private _completed = false
-  private _fulfilled?: T
-  private _rejected?: Error
-  constructor () {
-    this.promise = new Promise<T>((resolve, reject) => {
-      this._resolve = resolve
-      this._reject = reject
-    })
-  }
-
-  resolve (value: T): void {
-    this._completed = true
-    this._fulfilled = value
-    this._resolve(value)
-  }
-  reject (error: Error): void {
-    this._completed = true
-    this._rejected = error
-    this._reject(error)
-  }
-  get completed () {
-    return this._completed
-  }
-  get fulfilled () {
-    return Boolean(this._completed && !this._rejected)
-  }
-  get resolved () {
-    return this._fulfilled
-  }
-  get rejected () {
-    return this._rejected
-  }
-}
-
-function noop () { } // tslint:disable-line
+export default MakeBulkage

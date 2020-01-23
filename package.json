@@ -1,5 +1,5 @@
 {
-  "name": "bulk-promise",
+  "name": "bulkage",
   "version": "0.0.0",
   "description": "Bulk and Debounce execution and resolution of promises",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Floby/node-bulk-pomise.git"
+    "url": "git+https://github.com/Floby/node-bulkage.git"
   },
   "keywords": [
     "debounce",
@@ -21,9 +21,9 @@
   "author": "Florent Jaby <florent.jaby@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Floby/node-bulk-pomise/issues"
+    "url": "https://github.com/Floby/node-bulkage/issues"
   },
-  "homepage": "https://github.com/Floby/node-bulk-pomise#readme",
+  "homepage": "https://github.com/Floby/node-bulkage#readme",
   "devDependencies": {
     "@types/chai": "^4.2.7",
     "@types/mocha": "^5.2.7",

@@ -1,13 +1,13 @@
 import * as sinon from 'sinon'
 import { expect } from 'chai'
-import { BulkPromise } from '../src'
+import Bulkage, { BulkResolver } from '../src'
 import delay from 'delay'
 require('chai').use(require('sinon-chai'))
 
-describe('BulkPromise', () => {
+describe('Bulkage', () => {
   describe('()', () => {
     it('throws', () => {
-      expect(() => BulkPromise(undefined as Function)).to.throw(Error)
+      expect(() => Bulkage(undefined as BulkResolver<any, any>)).to.throw(Error)
     })
   })
 
@@ -17,7 +17,7 @@ describe('BulkPromise', () => {
       callable = sinon.spy((list) => list.map(() => undefined))
     })
     it('returns a function', () => {
-      const bulkage = BulkPromise(callable)
+      const bulkage = Bulkage(callable)
       expect(bulkage).to.be.a('function')
     })
 
@@ -25,7 +25,7 @@ describe('BulkPromise', () => {
       context('once', () => {
         it('calls the callable', async () => {
           // Given
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           bulkage()
           // Then
@@ -36,7 +36,7 @@ describe('BulkPromise', () => {
       context('twice on same tick', () => {
         it('calls the callable once', async () => {
           // Given
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           bulkage()
           bulkage()
@@ -48,7 +48,7 @@ describe('BulkPromise', () => {
       context('twice on different ticks', () => {
         it('calls the callable twice', async () => {
           // Given
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           bulkage()
           await delay(2)
@@ -72,7 +72,7 @@ describe('BulkPromise', () => {
         it('resolves n', async () => {
           // Given
           const n = 8
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           const actual = await bulkage(n)
           // Then
@@ -84,7 +84,7 @@ describe('BulkPromise', () => {
         const n2 = 18
         it('resolves n for each', async () => {
           // Given
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           const [ a1, a2 ] = await Promise.all([
             bulkage(n1),
@@ -96,7 +96,7 @@ describe('BulkPromise', () => {
         })
         it('calls the callable with a bulk of size 1', async () => {
           // Given
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           const [ a1, a2 ] = await Promise.all([
             bulkage(n1),
@@ -113,7 +113,7 @@ describe('BulkPromise', () => {
           it('resolves n for each', async () => {
             // Given
             const n = 8
-            const bulkage = BulkPromise(callable)
+            const bulkage = Bulkage(callable)
             // When
             const [ a1, a2 ] = await Promise.all([
               bulkage(n),
@@ -126,7 +126,7 @@ describe('BulkPromise', () => {
           it('calls the callable with a bulk of size 1', async () => {
             // Given
             const n = 8
-            const bulkage = BulkPromise(callable)
+            const bulkage = Bulkage(callable)
             // When
             const [ a1, a2 ] = await Promise.all([
               bulkage(n),
@@ -139,12 +139,12 @@ describe('BulkPromise', () => {
           })
         })
       })
-      context('twice on the different ticks', () => {
+      context('twice on different ticks', () => {
         it('resolves n for each', async () => {
           // Given
           const n1 = 8
           const n2 = 18
-          const bulkage = BulkPromise(callable)
+          const bulkage = Bulkage(callable)
           // When
           const a1 = await bulkage(n1)
           await delay(2)
