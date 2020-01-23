@@ -22,5 +22,16 @@
   "bugs": {
     "url": "https://github.com/Floby/node-bulk-pomise/issues"
   },
-  "homepage": "https://github.com/Floby/node-bulk-pomise#readme"
+  "homepage": "https://github.com/Floby/node-bulk-pomise#readme",
+  "devDependencies": {
+    "@types/chai": "^4.2.7",
+    "@types/mocha": "^5.2.7",
+    "@types/sinon": "^7.5.1",
+    "@types/sinon-chai": "^3.2.3",
+    "chai": "^4.2.0",
+    "mocha": "^7.0.0",
+    "sinon": "^8.1.1",
+    "sinon-chai": "^3.4.0",
+    "typescript": "^3.7.5"
+  }
 }
