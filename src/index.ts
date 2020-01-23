@@ -1,24 +1,30 @@
-interface PendingCall {
-  args: any[],
-  deferred: Deferred<any>[]
+type DebulkedResult<T> = Promise<T>
+type BulkedResult<T> = Promise<T[]>
+  type CallArguments<T> = T[]
+
+interface PendingCall<A, R> {
+  args: CallArguments<A>,
+  deferred: Deferred<R>[]
 }
 
-interface BulkResolver {
-  (param: any[][]): Promise<any[]>
+type Bulk<A> = CallArguments<A>[]
+interface BulkResolver<A, R> {
+  (bulk: Bulk<A>): BulkedResult<R>
 }
 
-interface BulkedFunction {
-  (...args: any[]): Promise<any>
+interface Bulkage<A, R> {
+  (...args: CallArguments<A>): DebulkedResult<R>
 }
 
-export function BulkPromise (callable: BulkResolver): BulkedFunction {
+
+export function BulkPromise<A, R> (callable: BulkResolver<A, R>): Bulkage<A, R> {
   if (!callable) {
     throw Error('BulkPromise MUST be called with a callbale argument')
   }
   let scheduled = false
-  let pendingCalls: PendingCall[] = []
+  let pendingCalls: PendingCall<A, R>[] = []
   return (arg) => {
-    const deferred = new Deferred()
+    const deferred = new Deferred<R>()
     const isBulkScheduled = pendingCalls.length >= 1
     addPendingCall([arg], deferred)
     if (!isBulkScheduled) {
