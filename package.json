@@ -1,0 +1,26 @@
+{
+  "name": "bulk-promise",
+  "version": "0.0.0",
+  "description": "Bulk and Debounce execution and resolution of promises",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "mocha --require typescript/register test/**/*.test.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Floby/node-bulk-pomise.git"
+  },
+  "keywords": [
+    "debounce",
+    "promise",
+    "bulk",
+    "throttle",
+    "batch"
+  ],
+  "author": "Florent Jaby <florent.jaby@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Floby/node-bulk-pomise/issues"
+  },
+  "homepage": "https://github.com/Floby/node-bulk-pomise#readme"
+}
