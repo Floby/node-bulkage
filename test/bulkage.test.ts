@@ -63,17 +63,18 @@ describe('Bulkage', () => {
   })
   describe('((ns: number[][]) => Promise<n>)', () => {
     let resolver
+    let bulkage: Bulkage.Bulkage<number, number>
     beforeEach(() => {
       resolver = sinon.spy(async (ns: number[][]) => {
         return ns.map(([n]) => n)
       })
+      bulkage = Bulkage<number, number>(resolver)
     })
     describe('(n)', () => {
       context('once', () => {
         it('resolves n', async () => {
           // Given
           const n = 8
-          const bulkage = Bulkage(resolver)
           // When
           const actual = await bulkage(n)
           // Then
@@ -84,8 +85,6 @@ describe('Bulkage', () => {
         const n1 = 8
         const n2 = 18
         it('resolves n for each', async () => {
-          // Given
-          const bulkage = Bulkage(resolver)
           // When
           const [ a1, a2 ] = await Promise.all([
             bulkage(n1),
@@ -96,8 +95,6 @@ describe('Bulkage', () => {
           expect(a2).to.equal(n2)
         })
         it('calls the resolver with a bulk of size 2', async () => {
-          // Given
-          const bulkage = Bulkage(resolver)
           // When
           const [ a1, a2 ] = await Promise.all([
             bulkage(n1),
@@ -125,7 +122,6 @@ describe('Bulkage', () => {
           it('resolves n for each', async () => {
             // Given
             const n = 8
-            const bulkage = Bulkage(resolver)
             // When
             const [ a1, a2 ] = await Promise.all([
               bulkage(n),
@@ -138,7 +134,6 @@ describe('Bulkage', () => {
           it('calls the resolver with a bulk of size 1', async () => {
             // Given
             const n = 8
-            const bulkage = Bulkage(resolver)
             // When
             const [ a1, a2 ] = await Promise.all([
               bulkage(n),
@@ -156,7 +151,6 @@ describe('Bulkage', () => {
           // Given
           const n1 = 8
           const n2 = 18
-          const bulkage = Bulkage(resolver)
           // When
           const a1 = await bulkage(n1)
           await delay(2)

@@ -1,15 +1,15 @@
 import deepEqual = require('fast-deep-equal')
 import Deferred from './deferred'
 
-function Bulkage<A, R> (resolver: Bulkage.BulkResolver<A, R>): Bulkage.Bulkage<A, R> {
-  return Bulkage.create<A, R>(resolver)
+function Bulkage<R, A=void> (resolver: Bulkage.BulkResolver<R, A>): Bulkage.Bulkage<R, A> {
+  return Bulkage.create<R, A>(resolver)
 }
 
 namespace Bulkage {
-  export interface Bulkage<A, R> {
+  export interface Bulkage<R, A=void> {
     (...args: CallArguments<A>): DebulkedResult<R>
   }
-  export interface BulkResolver<A, R> {
+  export interface BulkResolver<R, A=void> {
     (bulk: Bulk<A>): BulkedResult<R>
   }
 
@@ -19,16 +19,16 @@ namespace Bulkage {
   type BulkedResult<T> = Promise<T[]> | T[]
 
   type CallArguments<T> = T[]
-  interface PendingCall<A, R> {
+  interface PendingCall<R, A> {
     args: CallArguments<A>,
     deferred: Deferred<R>[]
   }
 
-  export function create<A, R> (callable: BulkResolver<A, R>): Bulkage<A, R> {
+  export function create<R, A> (callable: BulkResolver<R, A>): Bulkage<R, A> {
     if (!callable || typeof callable !== 'function') {
       throw Error('Bulkage MUST be constructed with a callbale argument')
     }
-    let pendingCalls: PendingCall<A, R>[] = []
+    let pendingCalls: PendingCall<R, A>[] = []
 
     return function bulkage (...argsToBulk): Promise<R> {
       const deferred = new Deferred<R>()
@@ -49,7 +49,7 @@ namespace Bulkage {
       }
     }
 
-    async function runBulk (bulk: PendingCall<A, R>[]) {
+    async function runBulk (bulk: PendingCall<R, A>[]) {
       const bulkedArgs =  bulk.map(({ args }) => args)
       const bulkedDeferred = bulk.map(({ deferred }) => deferred)
       const results = await callable(bulkedArgs)
@@ -68,7 +68,7 @@ namespace Bulkage {
       })
     }
 
-    function flushPendingCalls (): PendingCall<A, R>[] {
+    function flushPendingCalls (): PendingCall<R, A>[] {
       const bulk = [ ...pendingCalls ]
       pendingCalls = []
       return bulk
