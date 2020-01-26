@@ -198,6 +198,31 @@ describe('Bulkage', () => {
       })
     })
   })
+  describe('(() => void)', () => {
+    it('ignores return values and resolves calls', async () => {
+      // Given
+      const bulkage = Bulkage(() => Promise.resolve())
+      // When
+      const actual = await Promise.all([bulkage(), bulkage()])
+      // Then
+      expect(actual).to.have.length(2)
+      expect(actual[0]).to.equal(undefined)
+      expect(actual[1]).to.equal(undefined)
+    })
+    it('catches errors and rejects for every call', async () => {
+      // Given
+      const error = new Error('test error')
+      const bulkage = Bulkage(() => {
+        throw error
+      })
+      // When
+      const a1 = bulkage()
+      const a2 = bulkage()
+      // Then
+      await expect(a1).to.eventually.be.rejectedWith(error)
+      await expect(a2).to.eventually.be.rejectedWith(error)
+    })
+  })
 })
 
 function sum (...args: number[]): number {

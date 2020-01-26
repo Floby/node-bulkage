@@ -29,12 +29,20 @@ namespace Bulkage {
 
     async function runBulk (bulk: BulkedCall<Args, Result>[]) {
       const bulkedArgs =  bulk.map(({ args }) => args)
-      const results: Result[] = await callable(bulkedArgs)
-      if (results.length === bulk.length) {
-        onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(results[i]))
-      } else {
-        const error = new Bulkage.BulkedResultSizeError(results.length, bulk.length)
-        onEachDeferred(bulk, (d: Deferred<Result>, i) => d.reject(error))
+      try {
+        const results: Result[] | void = await callable(bulkedArgs)
+        if (results) {
+          if (results.length === bulk.length) {
+            onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(results[i]))
+          } else {
+            const error = new Bulkage.BulkedResultSizeError(results.length, bulk.length)
+            onEachDeferred(bulk, (d: Deferred<Result>, i) => d.reject(error))
+          }
+        } else {
+          onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(undefined))
+        }
+      } catch (error) {
+        onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
       }
     }
   }
@@ -59,5 +67,5 @@ namespace Bulkage {
 
 type BulkageReturnType<Resolver extends Bulkage.AnyBulkResolver> = Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
 type BulkageParameterType<Resolver extends Bulkage.AnyBulkResolver> = Unpacked<FirstParam<Resolver>>
-type BulkResolverReturnType<R> = Promise<R[]> | R[]
+type BulkResolverReturnType<R> = Promise<R[]> | R[] | Promise<void> // | void
 
