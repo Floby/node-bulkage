@@ -14,7 +14,7 @@ export abstract class BulkScheduler<A extends any[], R> {
   abstract newCall(): void
 
   public addPendingCall (newArgs: A, deferred: Deferred<R>) {
-    const similarCall = this._calls.find(({ args }) => isSimilarCall(args, newArgs))
+    const similarCall = this._calls.find(({ args }) => this.isSimilarCall(args, newArgs))
     if (similarCall) {
       similarCall.deferred.push(deferred)
     } else {
@@ -32,9 +32,6 @@ export abstract class BulkScheduler<A extends any[], R> {
   private isSimilarCall (argsLeft, argsRight): boolean {
     return deepEqual(argsLeft, argsRight)
   }
-}
-function isSimilarCall (argsLeft, argsRight): boolean {
-  return deepEqual(argsLeft, argsRight)
 }
 
 export class TickBulkScheduler<A extends any[], R> extends BulkScheduler<A, R> {
