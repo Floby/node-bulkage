@@ -13,13 +13,14 @@ type FirstParam<F extends (...args: any[]) => any> = Parameters<F>[0]
 
 type BulkResolverReturnType<R> = Promise<R[]> | Promise<R>[] | R[] | Promise<void> | void
 type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (...args: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
+type AnyBulkResolver = BulkResolver<any[], any>
 
-type BulkageReturnType<Resolver extends BulkResolver<any[], any>> =
-  Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
+type BulkageReturnType<Resolver extends BulkResolver<any[], any>> = Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
+type BulkageParameterType<Resolver extends AnyBulkResolver> = Unpacked<FirstParam<Resolver>>
 
-type Bulkage<Resolver extends BulkResolver<any[], any>> = (...args: Unpacked<FirstParam<Resolver>>) => BulkageReturnType<Resolver>
+type Bulkage<Resolver extends BulkResolver<any[], any>> = (...args: BulkageParameterType<Resolver>) => BulkageReturnType<Resolver>
 
-function createBulkage<ResolverType extends BulkResolver<any[], any>> (resolver: ResolverType): Bulkage<ResolverType> {
+function createBulkage<ResolverType extends AnyBulkResolver> (resolver: ResolverType): Bulkage<ResolverType> {
   return null as Bulkage<ResolverType>
 }
 

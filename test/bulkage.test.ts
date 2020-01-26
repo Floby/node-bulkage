@@ -8,7 +8,7 @@ require('chai').use(require('chai-as-promised'))
 describe('Bulkage', () => {
   describe('()', () => {
     it('throws', () => {
-      expect(() => Bulkage(undefined as Bulkage.BulkResolver<any, any>)).to.throw(Error)
+      expect(() => Bulkage(undefined as (n: [null][]) => null[])).to.throw(Error)
     })
   })
 
@@ -63,12 +63,12 @@ describe('Bulkage', () => {
   })
   describe('((ns: number[][]) => Promise<n>)', () => {
     let resolver
-    let bulkage: Bulkage.Bulkage<number, number>
+    let bulkage
     beforeEach(() => {
       resolver = sinon.spy(async (ns: number[][]) => {
         return ns.map(([n]) => n)
       })
-      bulkage = Bulkage<number, number>(resolver)
+      bulkage = Bulkage(resolver)
     })
     describe('(n)', () => {
       context('once', () => {
@@ -109,10 +109,10 @@ describe('Bulkage', () => {
         context('when resolver returns an array of a different size than the bulk', () => {
           it('rejects all promises', async () => {
             // Given
-            const resolver = (bulk: [number, number][]) => ([8])
-            const bulkage = Bulkage<number, number>(resolver)
+            const resolver = async (bulk: [number, number][]) => ([8])
+            const bulkage = Bulkage(resolver)
             // When
-            const [ a1, a2 ] = [ bulkage(n1), bulkage(n2) ]
+            const [ a1, a2 ] = [ bulkage(1, 2), bulkage(3, 4) ]
             // Then
             await expect(a1).to.eventually.be.rejectedWith(/Resolver gave a bulk result of size 1 but a result of size 2 was expected/i)
             await expect(a2).to.eventually.be.rejectedWith(/Resolver gave a bulk result of size 1 but a result of size 2 was expected/i)
@@ -164,7 +164,7 @@ describe('Bulkage', () => {
   })
   describe('((n, m) => Promise<n+m>)', () => {
     const resolver = async (bulk: [number, number][]) => bulk.map((args) => sum(...args))
-    let bulkage: Bulkage.Bulkage<number, number>
+    let bulkage
     beforeEach(() => {
       bulkage = Bulkage(resolver)
     })

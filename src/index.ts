@@ -1,83 +1,48 @@
-import deepEqual = require('fast-deep-equal')
 import Deferred from './deferred'
+import { BulkedCall, FirstParam, ResolvedTypeInArray, Unpacked } from './utility.d'
+import { TickBulkScheduler } from './scheduler'
 
-function Bulkage<R, A=void> (resolver: Bulkage.BulkResolver<R, A>): Bulkage.Bulkage<R, A> {
-  return Bulkage.create<R, A>(resolver)
+export default Bulkage
+
+function Bulkage<R extends Bulkage.AnyBulkResolver> (resolver: R): Bulkage.Bulkage<R> {
+  return Bulkage.create(resolver)
 }
 
 namespace Bulkage {
-  export interface Bulkage<R, A=void> {
-    (...args: CallArguments<A>): DebulkedResult<R>
-  }
-  export interface BulkResolver<R, A=void> {
-    (bulk: Bulk<A>): BulkedResult<R>
-  }
+  export type Bulkage<Resolver extends AnyBulkResolver> = (...args: BulkageParameterType<Resolver>) => BulkageReturnType<Resolver>
+  export type AnyBulkResolver = BulkResolver<any[], any>
+  export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (...args: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
 
-  type DebulkedResult<T> = Promise<T>
-  type Bulk<A> = CallArguments<A>[]
-
-  type BulkedResult<T> = Promise<T[]> | T[]
-
-  type CallArguments<T> = T[]
-  interface PendingCall<R, A> {
-    args: CallArguments<A>,
-    deferred: Deferred<R>[]
-  }
-
-  export function create<R, A> (callable: BulkResolver<R, A>): Bulkage<R, A> {
+  export function create<Resolver extends Bulkage.AnyBulkResolver> (callable: Resolver): Bulkage.Bulkage<Resolver> {
     if (!callable || typeof callable !== 'function') {
       throw Error('Bulkage MUST be constructed with a callbale argument')
     }
-    let pendingCalls: PendingCall<R, A>[] = []
+    type Args = BulkageParameterType<Resolver>
+    type Result = Unpacked<BulkageReturnType<Resolver>>
+    const scheduler = new TickBulkScheduler<Args, Result>(runBulk)
 
-    return function bulkage (...argsToBulk): Promise<R> {
-      const deferred = new Deferred<R>()
-      const isBulkScheduled = pendingCalls.length >= 1
-      addPendingCall(argsToBulk, deferred)
-      if (!isBulkScheduled) {
-        scheduleBulk()
-      }
+    return function bulkage (...argsToBulk: Args): BulkageReturnType<Resolver> {
+      const deferred = new Deferred<Result>()
+      scheduler.addPendingCall(argsToBulk, deferred)
       return deferred.promise
     }
 
-    function addPendingCall (newCallArgs, deferred) {
-      const similarCall = pendingCalls.find(({ args }) => isSimilarCall(args, newCallArgs))
-      if (similarCall) {
-        similarCall.deferred.push(deferred)
-      } else {
-        pendingCalls.push({ args: newCallArgs, deferred: [deferred] })
-      }
-    }
-
-    async function runBulk (bulk: PendingCall<R, A>[]) {
+    async function runBulk (bulk: BulkedCall<Args, Result>[]) {
       const bulkedArgs =  bulk.map(({ args }) => args)
-      const bulkedDeferred = bulk.map(({ deferred }) => deferred)
-      const results = await callable(bulkedArgs)
+      const results: Result[] = await callable(bulkedArgs)
       if (results.length === bulk.length) {
-        onEachDeferred(bulkedDeferred, (d, i) => d.resolve(results[i]))
+        onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(results[i]))
       } else {
-        const error = new BulkedResultSizeError(results.length, bulk.length)
-        onEachDeferred(bulkedDeferred, (d, i) => d.reject(error))
+        const error = new Bulkage.BulkedResultSizeError(results.length, bulk.length)
+        onEachDeferred(bulk, (d: Deferred<Result>, i) => d.reject(error))
       }
     }
+  }
 
-    function scheduleBulk () {
-      setImmediate(() => {
-        const bulk = flushPendingCalls()
-        runBulk(bulk)
-      })
-    }
-
-    function flushPendingCalls (): PendingCall<R, A>[] {
-      const bulk = [ ...pendingCalls ]
-      pendingCalls = []
-      return bulk
-    }
-
-    function isSimilarCall (argsLeft, argsRight): boolean {
-      return deepEqual(argsLeft, argsRight)
-    }
-
+  function onEachDeferred<R, B extends BulkedCall<any, R>[]> (bulk: B, iterate: (deferred: Deferred<R>, indexInBulk: number) => void) {
+    bulk.forEach((bulked, i) => {
+      bulked.deferred.forEach((deferred) => iterate(deferred, i))
+    })
   }
 
   export class BulkedResultSizeError extends Error {
@@ -91,13 +56,8 @@ namespace Bulkage {
     }
   }
 }
-export default Bulkage
 
-
-
-function onEachDeferred<R> (bulkedDeferred: Deferred<R>[][], iterate: (deferred: Deferred<R>, indexInBulk: number) => void) {
-  bulkedDeferred.forEach((deferredList, i) => {
-    deferredList.forEach((deferred) => iterate(deferred, i))
-  })
-}
+type BulkageReturnType<Resolver extends Bulkage.AnyBulkResolver> = Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
+type BulkageParameterType<Resolver extends Bulkage.AnyBulkResolver> = Unpacked<FirstParam<Resolver>>
+type BulkResolverReturnType<R> = Promise<R[]> | R[]
 
