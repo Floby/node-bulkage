@@ -1,3 +1,4 @@
+import Deferred from './deferred'
 type FirstParam<F extends (...args: any[]) => any> = Parameters<F>[0]
 
 export type Unpacked<T> =

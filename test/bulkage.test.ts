@@ -96,7 +96,7 @@ describe('Bulkage', () => {
         })
         it('calls the resolver with a bulk of size 2', async () => {
           // When
-          const [ a1, a2 ] = await Promise.all([
+          await Promise.all([
             bulkage(n1),
             bulkage(n2),
           ])
@@ -135,7 +135,7 @@ describe('Bulkage', () => {
             // Given
             const n = 8
             // When
-            const [ a1, a2 ] = await Promise.all([
+            await Promise.all([
               bulkage(n),
               bulkage(n),
             ])
