@@ -5,7 +5,6 @@ import { BulkedCall } from './utility.d'
 export abstract class BulkScheduler<A extends any[], R> {
   private _run: (bulk: BulkedCall<A, R>[]) => void
   private _calls: BulkedCall<A, R>[] = []
-  private _isBulkScheduled: boolean = false
 
   constructor (run: (bulk: BulkedCall<A, R>[]) => void) {
     this._run = (b) => run(b)

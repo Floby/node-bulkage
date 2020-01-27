@@ -109,7 +109,7 @@ describe('Bulkage', () => {
         context('when resolver returns an array of a different size than the bulk', () => {
           it('rejects all promises', async () => {
             // Given
-            const resolver = async (bulk: [number, number][]) => ([8])
+            const resolver = async (_: [number, number][]) => ([8])
             const bulkage = Bulkage(resolver)
             // When
             const [ a1, a2 ] = [ bulkage(1, 2), bulkage(3, 4) ]

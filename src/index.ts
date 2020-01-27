@@ -36,10 +36,10 @@ namespace Bulkage {
             onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(results[i]))
           } else {
             const error = new Bulkage.BulkedResultSizeError(results.length, bulk.length)
-            onEachDeferred(bulk, (d: Deferred<Result>, i) => d.reject(error))
+            onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
           }
         } else {
-          onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(undefined as Result))
+          onEachDeferred(bulk, (d: Deferred<Result>) => d.resolve(undefined as Result))
         }
       } catch (error) {
         onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
