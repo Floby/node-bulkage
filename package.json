@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Bulk and Debounce execution and resolution of promises",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:watch": "mocha --require ts-node/register test/**/*.test.ts --watch --watch-files test/**/*.ts src/**/*.ts"
