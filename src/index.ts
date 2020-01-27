@@ -39,7 +39,7 @@ namespace Bulkage {
             onEachDeferred(bulk, (d: Deferred<Result>, i) => d.reject(error))
           }
         } else {
-          onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(undefined))
+          onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(undefined as Result))
         }
       } catch (error) {
         onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
@@ -66,6 +66,8 @@ namespace Bulkage {
 }
 
 type BulkageReturnType<Resolver extends Bulkage.AnyBulkResolver> = Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
-type BulkageParameterType<Resolver extends Bulkage.AnyBulkResolver> = Unpacked<FirstParam<Resolver>>
+type BulkageParameterType<Resolver extends Bulkage.AnyBulkResolver> =
+  Unpacked<FirstParam<Resolver>> extends undefined ?[] : Unpacked<FirstParam<Resolver>>
+
 type BulkResolverReturnType<R> = Promise<R[]> | R[] | Promise<void> // | void
 

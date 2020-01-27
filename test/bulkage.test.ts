@@ -8,7 +8,7 @@ require('chai').use(require('chai-as-promised'))
 describe('Bulkage', () => {
   describe('()', () => {
     it('throws', () => {
-      expect(() => Bulkage(undefined as (n: [null][]) => null[])).to.throw(Error)
+      expect(() => Bulkage(undefined as unknown as (n: [null][]) => null[])).to.throw(Error)
     })
   })
 
@@ -203,7 +203,7 @@ describe('Bulkage', () => {
       // Given
       const bulkage = Bulkage(() => Promise.resolve())
       // When
-      const actual = await Promise.all([bulkage(), bulkage()])
+      const actual = await Promise.all([ bulkage(), bulkage() ])
       // Then
       expect(actual).to.have.length(2)
       expect(actual[0]).to.equal(undefined)

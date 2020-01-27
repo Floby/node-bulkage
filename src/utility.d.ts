@@ -7,8 +7,9 @@ export type Unpacked<T> =
     T
 export type ResolvedTypeInArray<R> =
   R extends Promise<any[]> ? Unpacked<Unpacked<R>> :
-  //R extends Promise<any>[] ? Unpacked<Unpacked<R>> :
   R extends any[] ? Unpacked<R> :
+  R extends Promise<void> ? void :
+  R extends void ? void :
   never
 
 export type BulkedCall<A, R> = { args: A, deferred: Deferred<R>[] }
