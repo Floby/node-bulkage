@@ -29,7 +29,7 @@ export abstract class BulkScheduler<A extends any[], R> {
     this._run(bulk)
   }
 
-  private isSimilarCall (argsLeft, argsRight): boolean {
+  private isSimilarCall (argsLeft: A, argsRight: A): boolean {
     return deepEqual(argsLeft, argsRight)
   }
 }

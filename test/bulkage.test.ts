@@ -13,9 +13,9 @@ describe('Bulkage', () => {
   })
 
   describe('(() => void)', () => {
-    let resolver
+    let resolver: Bulkage.BulkResolver<[], Promise<void>>
     beforeEach(() => {
-      resolver = sinon.spy((list) => list.map(() => undefined))
+      resolver = sinon.spy((list: any[][]) => list.map(() => Promise.resolve()))
     })
     it('returns a function', () => {
       const bulkage = Bulkage(resolver)
@@ -62,10 +62,10 @@ describe('Bulkage', () => {
     })
   })
   describe('((ns: number[][]) => Promise<n>)', () => {
-    let resolver
-    let bulkage
+    let resolver: Bulkage.BulkResolver<[number], number>
+    let bulkage: Bulkage.Bulkage<typeof resolver>
     beforeEach(() => {
-      resolver = sinon.spy(async (ns: number[][]) => {
+      resolver = sinon.spy(async (ns: [number][]) => {
         return ns.map(([n]) => n)
       })
       bulkage = Bulkage(resolver)
@@ -164,7 +164,7 @@ describe('Bulkage', () => {
   })
   describe('((n, m) => Promise<n+m>)', () => {
     const resolver = async (bulk: [number, number][]) => bulk.map((args) => sum(...args))
-    let bulkage
+    let bulkage: Bulkage.Bulkage<typeof resolver>
     beforeEach(() => {
       bulkage = Bulkage(resolver)
     })
@@ -176,8 +176,8 @@ describe('Bulkage', () => {
         it('resolves n+m for each', async () => {
           // When
           const [ a1, a2 ] = await Promise.all([
-            bulkage(...n1),
-            bulkage(...n2),
+            bulkage(n1[0], n1[1]),
+            bulkage(n2[0], n2[1]),
           ])
           // Then
           expect(a1).to.equal(sum(...n1))
@@ -187,8 +187,8 @@ describe('Bulkage', () => {
           it('resolves n+m for each', async () => {
             // When
             const [ a1, a2 ] = await Promise.all([
-              bulkage(...n2),
-              bulkage(...n3),
+              bulkage(n2[0], n2[1]),
+              bulkage(n3[0], n3[1]),
             ])
             // Then
             expect(a1).to.equal(sum(...n2))
@@ -233,3 +233,4 @@ function nextTick(): Promise<void> {
     setImmediate(resolve)
   })
 }
+

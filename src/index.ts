@@ -11,7 +11,7 @@ function Bulkage<R extends Bulkage.AnyBulkResolver> (resolver: R): Bulkage.Bulka
 namespace Bulkage {
   export type Bulkage<Resolver extends AnyBulkResolver> = (...args: BulkageParameterType<Resolver>) => BulkageReturnType<Resolver>
   export type AnyBulkResolver = BulkResolver<any[], any>
-  export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (...args: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
+  export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (bulk: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
 
   export function create<Resolver extends Bulkage.AnyBulkResolver> (callable: Resolver): Bulkage.Bulkage<Resolver> {
     if (!callable || typeof callable !== 'function') {
