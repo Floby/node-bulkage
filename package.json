@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "build": "rm -rf dist && tsc",
+    "prepublish": "npm run build",
     "test": "mocha --require ts-node/register test/**/*.test.ts",
     "test:watch": "mocha --require ts-node/register test/**/*.test.ts --watch --watch-files test/**/*.ts src/**/*.ts"
   },
