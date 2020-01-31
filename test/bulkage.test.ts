@@ -1,9 +1,9 @@
 import * as sinon from 'sinon'
 import { expect } from 'chai'
-import Bulkage from '../src'
-import delay from 'delay'
 require('chai').use(require('sinon-chai'))
 require('chai').use(require('chai-as-promised'))
+import Bulkage from '../src'
+import delay from 'delay'
 
 describe('Bulkage', () => {
   describe('()', () => {

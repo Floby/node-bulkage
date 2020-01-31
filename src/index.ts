@@ -1,11 +1,21 @@
 import Deferred from './deferred'
-import { BulkedCall, FirstParam, ResolvedTypeInArray, Unpacked } from './utility.d'
-import { TickBulkScheduler } from './scheduler'
+import { FirstParam, ResolvedTypeInArray, Unpacked } from './utility.d'
+import { BulkRunner } from './bulk-runner'
+import { BulkScheduler, TickScheduler } from './scheduler'
 
 export default Bulkage
 
-function Bulkage<R extends Bulkage.AnyBulkResolver> (resolver: R): Bulkage.Bulkage<R> {
-  return Bulkage.create(resolver)
+type BulkageArgumentList<R extends Bulkage.AnyBulkResolver> = [R] | [BulkSchedulerFromResolver<R>, R]
+function Bulkage<R extends Bulkage.AnyBulkResolver> (...args: BulkageArgumentList<R>): Bulkage.Bulkage<R> {
+  if (args.length === 1) {
+    const [ resolver ] = args
+    return Bulkage.create(new TickScheduler(), resolver)
+  }
+  if (args.length === 2) {
+    const [ scheduler, resolver ] = args
+    return Bulkage.create(scheduler, resolver)
+  }
+  throw TypeError('You MUST provide at least a resolver')
 }
 
 namespace Bulkage {
@@ -13,44 +23,17 @@ namespace Bulkage {
   export type AnyBulkResolver = BulkResolver<any[], any>
   export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (bulk: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
 
-  export function create<Resolver extends Bulkage.AnyBulkResolver> (callable: Resolver): Bulkage.Bulkage<Resolver> {
-    if (!callable || typeof callable !== 'function') {
-      throw Error('Bulkage MUST be constructed with a callbale argument')
-    }
+  export function create<Resolver extends Bulkage.AnyBulkResolver> (scheduler: BulkSchedulerFromResolver<Resolver>, callable: Resolver): Bulkage.Bulkage<Resolver> {
     type Args = BulkageParameterType<Resolver>
     type Result = Unpacked<BulkageReturnType<Resolver>>
-    const scheduler = new TickBulkScheduler<Args, Result>(runBulk)
+    const runBulk = BulkRunner<Args, Result>(callable)
+    scheduler.setRunner(runBulk)
 
     return function bulkage (...argsToBulk: Args): BulkageReturnType<Resolver> {
       const deferred = new Deferred<Result>()
       scheduler.addPendingCall(argsToBulk, deferred)
       return deferred.promise
     }
-
-    async function runBulk (bulk: BulkedCall<Args, Result>[]) {
-      const bulkedArgs =  bulk.map(({ args }) => args)
-      try {
-        const results: Result[] | void = await callable(bulkedArgs)
-        if (results) {
-          if (results.length === bulk.length) {
-            onEachDeferred(bulk, (d: Deferred<Result>, i) => d.resolve(results[i]))
-          } else {
-            const error = new Bulkage.BulkedResultSizeError(results.length, bulk.length)
-            onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
-          }
-        } else {
-          onEachDeferred(bulk, (d: Deferred<Result>) => d.resolve(undefined as Result))
-        }
-      } catch (error) {
-        onEachDeferred(bulk, (d: Deferred<Result>) => d.reject(error))
-      }
-    }
-  }
-
-  function onEachDeferred<R, B extends BulkedCall<any, R>[]> (bulk: B, iterate: (deferred: Deferred<R>, indexInBulk: number) => void) {
-    bulk.forEach((bulked, i) => {
-      bulked.deferred.forEach((deferred) => iterate(deferred, i))
-    })
   }
 
   export class BulkedResultSizeError extends Error {
@@ -64,6 +47,11 @@ namespace Bulkage {
     }
   }
 }
+
+type BulkSchedulerFromResolver<R extends Bulkage.AnyBulkResolver> = BulkScheduler<ArgsFromResolver<R>, ResultFromResolver<R>>
+
+type ArgsFromResolver<Resolver extends Bulkage.AnyBulkResolver> = BulkageParameterType<Resolver>
+type ResultFromResolver<Resolver extends Bulkage.AnyBulkResolver> = Unpacked<BulkageReturnType<Resolver>>
 
 type BulkageReturnType<Resolver extends Bulkage.AnyBulkResolver> = Promise<ResolvedTypeInArray<ReturnType<Resolver>>>
 type BulkageParameterType<Resolver extends Bulkage.AnyBulkResolver> =
