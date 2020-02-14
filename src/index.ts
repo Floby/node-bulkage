@@ -2,6 +2,7 @@ import Deferred from './deferred'
 import { FirstParam, ResolvedTypeInArray, Unpacked } from './utility.d'
 import { BulkRunner } from './bulk-runner'
 import { BulkScheduler } from './scheduler'
+import { debug, trace, formatArgList } from './debug'
 
 export default Bulkage
 
@@ -13,6 +14,7 @@ type BulkageArgumentList<R extends Bulkage.AnyBulkResolver> =
 function Bulkage<R extends Bulkage.AnyBulkResolver> (...args: BulkageArgumentList<R>): Bulkage.Bulkage<R> {
   if (args.length === 1) {
     const [ resolver ] = args
+    debug('Using default TickResolver')
     return Bulkage.create(BulkScheduler.defaultScheduler(), resolver)
   }
   if (args.length === 2) {
@@ -38,6 +40,7 @@ namespace Bulkage {
     scheduler.setRunner(runBulk)
     function bulkage (...argsToBulk: Args): BulkageReturnType<R> {
       const deferred = new Deferred<Result>()
+      trace(`scheduling call (${formatArgList(argsToBulk)})`)
       scheduler.addPendingCall(argsToBulk, deferred)
       return deferred.promise
     }

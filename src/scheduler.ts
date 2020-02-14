@@ -3,6 +3,7 @@ import { BulkRunner } from './bulk-runner'
 import { BaseBulkScheduler } from './scheduler/base-bulk-scheduler'
 import { TickScheduler } from './scheduler/tick-scheduler'
 import { DebounceScheduler } from './scheduler/debounce-scheduler'
+import { debug } from './debug'
 
 export interface BulkScheduler<A extends any[], R> {
   setRunner (run: BulkRunner<A, R>): void
@@ -12,12 +13,15 @@ export interface BulkScheduler<A extends any[], R> {
 export namespace BulkScheduler {
   export function getScheduler<A extends any[], R> (schedulerOrPolicy: BulkScheduler<A, R> | Policy): BulkScheduler<A, R> {
     if (isScheduler(schedulerOrPolicy)) {
+      debug('policy is already a scheduler')
       return schedulerOrPolicy
     } else {
       const policy: Policy = schedulerOrPolicy
       if (Policy.isShortDebouncePolicy(policy)) {
+        debug(`Using Debounce Scheduler with debounce=${policy}`)
         return new DebounceScheduler<A, R>(policy)
       } else {
+        debug(`Using Debounce Scheduler with debounce=${policy.debounce} max=${policy.max}`)
         return new DebounceScheduler<A, R>(policy.debounce, policy.max)
       }
     }

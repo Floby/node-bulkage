@@ -102,6 +102,12 @@ Same as above, except the `policy` is used to change the behaviour of the schedu
 If `policy` is omitted, the a conservative `TickScheduler` is used which only bulks calls made on the exact same tick.
 
 
+Debugging
+---------
+
+`Bulkage` uses the [`debug`](https://www.npmjs.com/package/debug) module to trace its behaviour. Start your
+program with environment `DEBUG=bulkage` or `DEBUG=bulkage:trace` to see what is going on.
+
 Test
 ----
 

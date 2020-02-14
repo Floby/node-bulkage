@@ -1,6 +1,8 @@
 import Deferred from './deferred'
 import { BulkedCall } from './utility.d'
 import Bulkage from './'
+import { debug, trace, formatArgList } from './debug'
+
 export type BulkRunner<A extends any[], R> = (bulk: BulkedCall<A, R>[]) => void
 
 export function BulkRunner<A extends any[], R> (callable: Callable<A, R>): BulkRunner<A, R> {
@@ -8,7 +10,8 @@ export function BulkRunner<A extends any[], R> (callable: Callable<A, R>): BulkR
     throw Error('Bulkage MUST be constructed with a callable argument')
   }
   return async function runBulk (bulk: BulkedCall<A, R>[]) {
-
+    debug('Resolving bulk of size %d with resolver', bulk.length, callable)
+    traceBulk(bulk)
     const bulkedArgs =  bulk.map(({ args }) => args)
     try {
       const results: R[] | void = await callable(bulkedArgs)
@@ -35,3 +38,11 @@ function onEachDeferred<R, B extends BulkedCall<any, R>[]> (bulk: B, iterate: (d
     bulked.deferred.forEach((deferred) => iterate(deferred, i))
   })
 }
+
+function traceBulk(bulk: BulkedCall<any, any>[]) {
+  for (const pending of bulk) {
+    const argList = formatArgList(pending.args)
+    trace(`${pending.deferred.length} waiting for (${argList})`)
+  }
+}
+
