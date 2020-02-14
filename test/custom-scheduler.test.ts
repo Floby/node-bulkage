@@ -2,7 +2,9 @@ import * as sinon from 'sinon'
 import { expect } from 'chai'
 require('chai').use(require('sinon-chai'))
 require('chai').use(require('chai-as-promised'))
-import { BaseBulkScheduler, TickScheduler, DebounceScheduler } from '../src/scheduler'
+import { BaseBulkScheduler } from '../src/scheduler/base-bulk-scheduler'
+import { TickScheduler } from '../src/scheduler/tick-scheduler'
+import { DebounceScheduler } from '../src/scheduler/debounce-scheduler'
 import Bulkage from '../src'
 
 describe('Bulkage', () => {

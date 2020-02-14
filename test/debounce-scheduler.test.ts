@@ -5,7 +5,7 @@ require('chai').use(require('chai-as-promised'))
 
 import delay from 'delay'
 import Deferred from '../src/deferred'
-import { DebounceScheduler } from '../src/scheduler'
+import { DebounceScheduler } from '../src/scheduler/debounce-scheduler'
 
 describe('DebounceScheduler(bounce, max)', () => {
   const bounce = 5

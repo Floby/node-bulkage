@@ -4,7 +4,7 @@ require('chai').use(require('sinon-chai'))
 require('chai').use(require('chai-as-promised'))
 
 import Deferred from '../src/deferred'
-import { TickScheduler } from '../src/scheduler'
+import { TickScheduler } from '../src/scheduler/tick-scheduler'
 
 describe('TickScheduler(fn)', () => {
   context('when registering one call', () => {

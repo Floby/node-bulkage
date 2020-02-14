@@ -28,14 +28,15 @@ namespace Bulkage {
     readonly scheduler: BulkSchedulerFromResolver<Resolver>
   }
   export type AnyBulkResolver = BulkResolver<any[], any>
-  export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (bulk: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
+  export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> =
+    (bulk: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
 
-  export function create<Resolver extends Bulkage.AnyBulkResolver> (scheduler: BulkSchedulerFromResolver<Resolver>, callable: Resolver): Bulkage.Bulkage<Resolver> {
-    type Args = BulkageParameterType<Resolver>
-    type Result = Unpacked<BulkageReturnType<Resolver>>
+  export function create<R extends Bulkage.AnyBulkResolver> (scheduler: BulkSchedulerFromResolver<R>, callable: R): Bulkage.Bulkage<R> {
+    type Args = BulkageParameterType<R>
+    type Result = Unpacked<BulkageReturnType<R>>
     const runBulk = BulkRunner<Args, Result>(callable)
     scheduler.setRunner(runBulk)
-    function bulkage (...argsToBulk: Args): BulkageReturnType<Resolver> {
+    function bulkage (...argsToBulk: Args): BulkageReturnType<R> {
       const deferred = new Deferred<Result>()
       scheduler.addPendingCall(argsToBulk, deferred)
       return deferred.promise
@@ -43,6 +44,7 @@ namespace Bulkage {
     bulkage.scheduler = scheduler
     return bulkage
   }
+
 
   export class BulkedResultSizeError extends Error {
     readonly actual: number
