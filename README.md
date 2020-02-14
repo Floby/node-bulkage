@@ -13,28 +13,38 @@ Installation
 Usage
 -----
 
+`Bulkage` makes it easy to write functions or methods whose signature is unitary but actually
+perform I/O in bulk. It is useful for:
+
+### Implementing I/O optimizations without changing your business logic
+
 ```typescript
-const getById: (id: string) => Foo = Bulkage(async (bulk: [string][]) => {
+const getUserById: (id: string) => Promise<User> = Bulkage(async (bulk: Array<[string]>) => {
   const allIds = bulk.map(([id]) => id)
-  const allFoos = await fetchFoosByIds(allIds)
-  return allIds.map((id) => allFoos.find((foo) => foo.id === id))
+  const allUsers = await fetchManyUsersByIds(allIds)
+  return allIds.map((id) => allUsers.find((user) => user.id === id))
 })
 
-const foos = await Promise.all([
+const users = await Promise.all([
   getById(1),
   getById(2),
   getById(3),
 ])
 ///^ These are all made in one bulk request
-
+///^ for example: SELECT * from users where id in ('1', '2', '3');
 ```
 
+It is worth noting that several calls can be bulked together even when they are executed in different contexts (e.g. differents HTTP requests)
+
+### Debouncing costly or complex processing
+
 By default, Bulkage bulks calls made on the same tick. But you can use
-a policy based on a time window.
+a policy based on a time window. The call is then debounced according
+to the number of milliseconds you specified.
 
 ```typescript
 import delay from 'delay'
-const processStuff: () => Promise<void> = Bulkage(10, async (bulk: [][]) => { await doStuff() })
+const processStuff: () => Promise<void> = Bulkage(10, async (bulk: Array<[]>) => { await doStuff() })
 processStuff() ///< this one is first bulk
 processStuff() ///< this one is first bulk
 await delay(9)
@@ -43,17 +53,54 @@ await delay(10)
 processStuff() ///< This one is another bulk
 ```
 
-There is more fine tuning available
+### Keeping track of background or deferred logic
 
+There is more fine tuning available for the policy of the debounce strategy.
+for example with a garbage collection usecase:
 
 ```typescript
 import ms from 'ms'
-const debounceMs = ms('2 seconds')
-const maxDelay = ms('30 seconds')
-const gc: () => Promise<void> = Bulkage(Bulkage.TimePolicy(debounceMs, maxDelay), async () => {
-  await removeActualStuff()
+const removeRef: (reference: Ref) => Promise<void> = Bulkage({ debounce: ms('2s'), max: ms('20s') }, async (bulk: Array<[Reference]>) => {
+  const referencesToRemove = bulk.map(([reference]) => reference)
+  await removeReferences(referencesToRemove)
 })
 ```
+
+Reference
+---------
+
+### `Bulkage(resolver: (bulk: Array<[...Arguments]>) => Promise<Array<Result>>): Bulkage.Bulkage<...Arguments, Result>`
+
+Creates a new `Bulkage`. A Bulkage is a function with a unitary-style signature.
+The `resolver` is the function that will be called when several calls need to be executed.
+The type of the resulting `Bulkage` is
+inferred from the type of the `resolver`. Here `...Arguments` means a finite list of types. `Result` can be any type including
+`void`.
+
+For example:
+```typescript
+const getTimesTwo = Bulkage(async (bulk: Array<[number]>) => {
+  return bulk.map(([n]) => n * 2)
+})
+typeof getTimesTwo ///> (n: number) => Promise<number>
+```
+
+The return type of the resolver _can_ be `void` which means the resulting `Bulkage` will have a return type of `Promise<void>`.
+However if the return type of the resolver is an array, the it _MUST_ have the same `length` as the `bulk` for which it was called.
+This is necessary because the index of each element in the resulting array is used to associate it with the corresponding pending call.
+
+
+### `Bulkage(policy, resolver)`
+
+Same as above, except the `policy` is used to change the behaviour of the scheduler.
+
+  + `policy: number`: Use a `DebounceScheduler` which will debounce calls within this number of milliseconds
+  + `policy: { debounce: number }`: Same as above
+  + `policy: { debounce: number, max: number }`: Same as above except calls cannot be debounced indefinitely and will eventually be called
+      after `max` milliseconds
+
+If `policy` is omitted, the a conservative `TickScheduler` is used which only bulks calls made on the exact same tick.
+
 
 Test
 ----
