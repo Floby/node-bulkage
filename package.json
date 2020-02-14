@@ -1,6 +1,6 @@
 {
   "name": "bulkage",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Bulk and Debounce execution and resolution of promises",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
