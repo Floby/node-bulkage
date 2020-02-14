@@ -11,7 +11,8 @@ describe('TickScheduler(fn)', () => {
     it('calls fn on next tick', async () => {
       const deferred = new Deferred<void>()
       const fn = sinon.spy(() => Promise.resolve())
-      const scheduler = new TickScheduler(fn)
+      const scheduler = new TickScheduler()
+      scheduler.setRunner(fn)
       expect(fn).to.have.callCount(0)
       scheduler.addPendingCall([], deferred)
       expect(fn).to.have.callCount(0)
@@ -25,7 +26,8 @@ describe('TickScheduler(fn)', () => {
       it('calls fn on next tick', async () => {
         const deferred = new Deferred<void>()
         const fn = sinon.spy(() => Promise.resolve())
-        const scheduler = new TickScheduler(fn)
+        const scheduler = new TickScheduler()
+        scheduler.setRunner(fn)
         expect(fn).to.have.callCount(0)
         scheduler.addPendingCall([], deferred)
         scheduler.addPendingCall([], deferred)
@@ -41,7 +43,8 @@ describe('TickScheduler(fn)', () => {
       it('calls fn on twice', async () => {
         const deferred = new Deferred<void>()
         const fn = sinon.spy(() => Promise.resolve())
-        const scheduler = new TickScheduler(fn)
+        const scheduler = new TickScheduler()
+        scheduler.setRunner(fn)
         expect(fn).to.have.callCount(0)
         scheduler.addPendingCall([], deferred)
         expect(fn).to.have.callCount(0)

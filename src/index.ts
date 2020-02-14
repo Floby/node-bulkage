@@ -1,25 +1,32 @@
 import Deferred from './deferred'
 import { FirstParam, ResolvedTypeInArray, Unpacked } from './utility.d'
 import { BulkRunner } from './bulk-runner'
-import { BulkScheduler, TickScheduler } from './scheduler'
+import { BulkScheduler } from './scheduler'
 
 export default Bulkage
 
-type BulkageArgumentList<R extends Bulkage.AnyBulkResolver> = [R] | [BulkSchedulerFromResolver<R>, R]
+type BulkageArgumentList<R extends Bulkage.AnyBulkResolver> =
+  [R] |
+  [BulkSchedulerFromResolver<R>, R] |
+  [BulkScheduler.Policy, R]
+
 function Bulkage<R extends Bulkage.AnyBulkResolver> (...args: BulkageArgumentList<R>): Bulkage.Bulkage<R> {
   if (args.length === 1) {
     const [ resolver ] = args
-    return Bulkage.create(new TickScheduler(), resolver)
+    return Bulkage.create(BulkScheduler.defaultScheduler(), resolver)
   }
   if (args.length === 2) {
     const [ scheduler, resolver ] = args
-    return Bulkage.create(scheduler, resolver)
+    return Bulkage.create(BulkScheduler.getScheduler(scheduler), resolver)
   }
   throw TypeError('You MUST provide at least a resolver')
 }
 
 namespace Bulkage {
-  export type Bulkage<Resolver extends AnyBulkResolver> = (...args: BulkageParameterType<Resolver>) => BulkageReturnType<Resolver>
+  export interface Bulkage<Resolver extends AnyBulkResolver> {
+    (...args: BulkageParameterType<Resolver>): BulkageReturnType<Resolver>
+    readonly scheduler: BulkSchedulerFromResolver<Resolver>
+  }
   export type AnyBulkResolver = BulkResolver<any[], any>
   export type BulkResolver<BulkageParameters extends any[], BulkageReturnType extends any> = (bulk: BulkageParameters[]) => BulkResolverReturnType<BulkageReturnType>
 
@@ -28,12 +35,13 @@ namespace Bulkage {
     type Result = Unpacked<BulkageReturnType<Resolver>>
     const runBulk = BulkRunner<Args, Result>(callable)
     scheduler.setRunner(runBulk)
-
-    return function bulkage (...argsToBulk: Args): BulkageReturnType<Resolver> {
+    function bulkage (...argsToBulk: Args): BulkageReturnType<Resolver> {
       const deferred = new Deferred<Result>()
       scheduler.addPendingCall(argsToBulk, deferred)
       return deferred.promise
     }
+    bulkage.scheduler = scheduler
+    return bulkage
   }
 
   export class BulkedResultSizeError extends Error {

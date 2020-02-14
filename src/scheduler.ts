@@ -9,7 +9,22 @@ export interface BulkScheduler<A extends any[], R> {
 }
 
 export namespace BulkScheduler {
-  export function isScheduler<A extends any[], R> (_scheduler: object): _scheduler is BulkScheduler<A, R> {
+  export function getScheduler<A extends any[], R> (schedulerOrPolicy: BulkScheduler<A, R> | Policy): BulkScheduler<A, R> {
+    if (isScheduler(schedulerOrPolicy)) {
+      return schedulerOrPolicy
+    } else {
+      const policy: Policy = schedulerOrPolicy
+      if (Policy.isShortDebouncePolicy(policy)) {
+        return new DebounceScheduler<A, R>(policy)
+      } else {
+        return new DebounceScheduler<A, R>(policy.debounce, policy.max)
+      }
+    }
+  }
+  export function defaultScheduler<A extends any[], R> (): BulkScheduler<A, R> {
+    return new TickScheduler<A, R>()
+  }
+  export function isScheduler<A extends any[], R> (_scheduler: any): _scheduler is BulkScheduler<A, R> {
     const scheduler = _scheduler as BaseBulkScheduler<A, R>
     const hasSetRunner = true
       && (typeof scheduler === 'object')
@@ -21,15 +36,29 @@ export namespace BulkScheduler {
       && (scheduler.addPendingCall.length === 2)
     return hasSetRunner && hasAddPendingCall
   }
+
+  export namespace Policy {
+    export type ShortDebouncePolicy = number
+    export type DebouncePolicy = {
+      debounce: number
+      max?: number
+    }
+    export function isShortDebouncePolicy (policy: any): policy is ShortDebouncePolicy {
+      return Number.isSafeInteger(policy)
+    }
+    export function isDebouncePolicy (policy: any): policy is DebouncePolicy {
+      return (typeof policy === 'object') && policy.hasOwnProperty('debounce')
+    }
+  }
+  export type Policy = Policy.ShortDebouncePolicy | Policy.DebouncePolicy
 }
 
 export abstract class BaseBulkScheduler<A extends any[], R> {
   private _run: BulkRunner<A, R>
   private _calls: BulkedCall<A, R>[] = []
 
-  constructor (run?: BulkRunner<A, R>) {
+  constructor () {
     this._run = () => { throw Error('no runner specified for this scheduler') }
-    (run) && this.setRunner(run)
   }
 
   public setRunner (run: BulkRunner<A, R>) {
@@ -73,33 +102,21 @@ export class TickScheduler<A extends any[], R> extends BaseBulkScheduler<A, R> {
   }
 }
 
-export function TimeScheduler<A extends any[], R> (bounce: number, max: number | BulkRunner<A, R>, runner?: BulkRunner<A, R>): DebounceScheduler<A, R> {
-  if (typeof max === 'number') {
-    if (runner) {
-      return new DebounceScheduler (bounce, max, runner)
-    } else {
-      throw Error('You MUST give a runner to the Scheduler')
-    }
-  } else {
-    return new DebounceScheduler (bounce, null, max)
-  }
-}
-
-class DebounceScheduler<A extends any[], R> extends BaseBulkScheduler<A, R> {
+export class DebounceScheduler<A extends any[], R> extends BaseBulkScheduler<A, R> {
   private _timeout?: any
   private _maxTimeout?: any
-  private _bounce: number
-  private _max: number | null
-  constructor (bounce: number, max: number | null, fn: (bulk: BulkedCall<A, R>[]) => void) {
-    super(fn)
-    this._bounce = bounce
-    this._max = max
+  readonly bounce: number
+  readonly max: number | undefined
+  constructor (bounce: number, max?: number) {
+    super()
+    this.bounce = bounce
+    this.max = max
   }
   newCall() {
     this.clearTimeout()
-    this._timeout = setTimeout(() => this.doFlush(), this._bounce)
-    if (!this._maxTimeout && this._max) {
-      this._maxTimeout = setTimeout(() => this._timeout && this.doFlush(), this._max)
+    this._timeout = setTimeout(() => this.doFlush(), this.bounce)
+    if (!this._maxTimeout && this.max) {
+      this._maxTimeout = setTimeout(() => this._timeout && this.doFlush(), this.max)
     }
 
   }

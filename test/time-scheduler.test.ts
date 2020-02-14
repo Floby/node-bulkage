@@ -5,15 +5,16 @@ require('chai').use(require('chai-as-promised'))
 
 import delay from 'delay'
 import Deferred from '../src/deferred'
-import { TimeScheduler } from '../src/scheduler'
+import { DebounceScheduler } from '../src/scheduler'
 
-describe('TimeScheduler(bounce, max)', () => {
+describe('DebounceScheduler(bounce, max)', () => {
   const bounce = 5
   context('when registering one call', () => {
     it('calls fn after bounce milliseconds', async () => {
       const deferred = new Deferred<void>()
       const fn = sinon.spy(() => Promise.resolve())
-      const scheduler = TimeScheduler(bounce, fn)
+      const scheduler = new DebounceScheduler(bounce)
+      scheduler.setRunner(fn)
       expect(fn).to.have.callCount(0)
       scheduler.addPendingCall([], deferred)
       expect(fn).to.have.callCount(0)
@@ -34,7 +35,8 @@ describe('TimeScheduler(bounce, max)', () => {
       it('calls fn once after bouncing once', () => {
         const deferred = new Deferred<void>()
         const fn = sinon.spy(() => Promise.resolve())
-        const scheduler = TimeScheduler(bounce, fn)
+        const scheduler = new DebounceScheduler(bounce)
+        scheduler.setRunner(fn)
         expect(fn).to.have.callCount(0)
         scheduler.addPendingCall([], deferred)
         expect(fn).to.have.callCount(0)
@@ -51,7 +53,8 @@ describe('TimeScheduler(bounce, max)', () => {
       it('calls fn twice', () => {
         const deferred = new Deferred<void>()
         const fn = sinon.spy(() => Promise.resolve())
-        const scheduler = TimeScheduler(bounce, fn)
+        const scheduler = new DebounceScheduler(bounce)
+        scheduler.setRunner(fn)
         expect(fn).to.have.callCount(0)
         scheduler.addPendingCall([], deferred)
         expect(fn).to.have.callCount(0)
@@ -73,7 +76,8 @@ describe('TimeScheduler(bounce, max)', () => {
     it('calls fn anyway', () => {
       const deferred = new Deferred<void>()
       const fn = sinon.spy(() => Promise.resolve())
-      const scheduler = TimeScheduler(6, 15, fn)
+      const scheduler = new DebounceScheduler(6, 15)
+      scheduler.setRunner(fn)
       scheduler.addPendingCall([], deferred)
       clock.tick(4)
       expect(fn).to.have.callCount(0)
